@@ -25,7 +25,7 @@ Normal usage arguments:
  >Number of Tilda instances to run. Can be ommited for a single one.
 
 Output, including Tilda's, is logged to "tilda-starter.log" which is located
-in the directory that contains this script ( if writable ).
+in the directory that contains this script ( if writable ( ~/.config/tilda should be just fine ).
 To disable logging, comment the line 75.
 
-2015 Filip Danilovic <filip@openmailbox.org>"
+2015 Filip Danilovic <filip@openmailbox.org>
