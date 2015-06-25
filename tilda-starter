@@ -1,0 +1,176 @@
+#!/bin/bash
+
+# Usage:
+
+show_usage() {
+echo -e "
+This script is a workaround for config files nuking issue in Tilda. 
+If any config is found to be zero bytes long it will be restored from backup. 
+Tilda is then started.
+
+It can also be used to create backups (config_n.bak), either for specified 
+config files only, or else for all found inside \"~/.config/tilda/\".
+Existing backups will overwriten!
+
+If you're about to use this script for the first time,
+make sure to create backup(s) first. See bellow. \n
+Backup arguments:
+
+ -c \"config_1 config_2 config_3\"\n	--Backup only specified config files\
+ and exit.\n	  !!Always use quotes as in the example!!
+ -b\n	--Backup each config file found and exit.
+
+#---------------------#
+
+Normal usage arguments:
+
+ -i number_of_instances_to_run\n	--Number of Tilda instances to run. Can be\
+ ommited for a single one.
+
+Output, including Tilda's, is logged to \"tilda-starter.log\" which is located
+in the directory that contains this script ( if writable ).
+To disable logging, comment the line 75.
+
+2015 Filip Danilovic <filip@openmailbox.org>\n"
+
+exit
+}
+
+
+# Set some variables:
+
+USER=`whoami`
+DIR=/home/$USER/.config/tilda
+
+
+# Change to Tilda's config dir and look for config files:
+
+cd $DIR
+CONF=( `ls config_* | grep -v "bak"` )
+
+
+# Loging:
+
+log() {
+
+	DATE=$(date "+%d.%m.%Y %H:%M")
+	LOG_FILE=`dirname $0`/tilda-start.log
+
+
+	# Keep the log bellow 500 lines:
+
+	LOG_LENGTH=`cat $LOG_FILE | wc -l`
+	if [ "$LOG_LENGTH" -gt "500" ]; then
+		mv -f $LOG_FILE $LOG_FILE\.old
+	fi
+
+	echo -e "\n#####################" >> $LOG_FILE
+	echo -e "---> $DATE" >> $LOG_FILE
+	echo -e "#####################\n" >> $LOG_FILE
+
+	exec > >(tee -a ${LOG_FILE} )
+	exec 2> >(tee -a ${LOG_FILE} >&2)
+
+}
+log
+
+
+# Check if ones found, or specified configs actually exist:
+
+conf_check_existence() {
+
+	for f in "${CONF[@]}"; do
+		if [ -f $f ]; then
+			CONF_GOOD+=( "$f" )
+		else
+			echo -e "\n --> \"$f\" not found. Skiping!"
+		fi
+	done
+
+}
+
+
+# Function for creating backup(s) from existing, non zero length config file(s):
+
+backup_conf() {
+
+	for conf in "${CONF_GOOD[@]}"; do
+		echo -e "\n --> Backing up \"$conf\":"
+		if [ -f $conf ]; then
+			SIZE=$(du -h -B1 $conf | awk '{print $1}')
+		else
+			echo -e "\n --> \"$conf\" not found!"  
+		fi
+		if [ "$SIZE" -gt 0 ]; then
+			cp -f $conf $conf\.bak && echo -e "\n --> $DIR/$conf.bak created"
+		else
+			echo -e "\n --> $conf is nuked. It's size is $SIZE bytes. Reconfigure Tilda, then run this script again."
+		fi
+	done
+	exit
+
+}
+
+
+# Parse arguments
+
+while getopts "hbc:i:" arg; do
+    case "$arg" in
+		h)
+		show_usage
+		;;
+		b)
+		conf_check_existence
+		backup_conf
+		;;
+		c)
+		CONF=($OPTARG)
+		conf_check_existence
+		backup_conf
+		;;
+		i)
+		N=($OPTARG)
+		INSTANCES=""
+		if [ "$N" -ge "1" ]; then
+			INSTANCES=$(seq 1 $N)
+		else
+			echo -e "\n --> Number of instances to run must be greater then or equal to 1!"
+			exit
+		fi
+		;;
+		*)
+		show_usage
+		;;
+	esac
+done
+
+
+# Actuall fix ( restores backup file if config file is 0 bytes in length ), and
+# runs Tilda:
+
+fix() {
+
+	for conf in "${CONF[@]}"; do
+	SIZE=$(du -h -B1 $conf | awk '{print $1}')
+		if [ "$SIZE" == "0" ]; then
+			if [ ! -e "$conf.bak" ]; then
+			echo -e "\n --> Cannot restore $conf. Backup file not found!"
+			else
+			cp -f $conf.bak $conf && echo -e "\n --> Fixed 0 bytes $conf\n"
+			fi
+		fi
+	done
+
+	# Run Tilda now:
+
+	if [ ! -z "$INSTANCES" ]; then
+		echo -e "\n --> Starting $( echo $INSTANCES | awk '{print substr($0,length,1)}') instance(s):"
+		for i in $INSTANCES; do (tilda &); sleep 1; done
+	else
+		echo -e "\n --> Starting 1 instance:"
+		tilda
+	fi
+
+}
+fix
+		
