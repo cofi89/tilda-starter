@@ -13,14 +13,16 @@ make sure to create backup(s) first. See bellow.
 
 Backup arguments:
 
- -c "config_1 config_2 config_3"	--Backup only specified config files
- and exit.	  !!Always use quotes as in the example!!
- -b		--Backup each config file found and exit.  
+ -c "config_1 config_2 config_3"  
+ > Backup only specified config files and exit.	  !!Always use quotes as in the example!!  
+       
+ -b		
+ > Backup each config file found and exit.  
 
 Normal usage arguments:
 
- -i number_of_instances_to_run	--Number of Tilda instances to run. Can be
- ommited for a single one.
+ -i number_of_instances_to_run	
+ >Number of Tilda instances to run. Can be ommited for a single one.
 
 Output, including Tilda's, is logged to "tilda-starter.log" which is located
 in the directory that contains this script ( if writable ).
