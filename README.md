@@ -28,4 +28,4 @@ Output, including Tilda's, is logged to "tilda-starter.log" which is located
 in the directory that contains this script ( if writable ).
 To disable logging, comment the line 75.
 
-2015 Filip Danilovic <filip@openmailbox.org>\n"
+2015 Filip Danilovic <filip@openmailbox.org>"
